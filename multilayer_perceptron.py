@@ -1,10 +1,10 @@
-from typing import Any, Callable, Sequence
+from typing import Callable, Sequence
 import numpy as np
 
 
 class MultilayerPerceptron:
     def __init__(
-        self, weights: Sequence[np.ndarray],
+        self, weights: Sequence[np.ndarray], biases: Sequence[np.ndarray],
         activation: Callable[[float], float]
     ) -> None:
         """
@@ -16,6 +16,7 @@ class MultilayerPerceptron:
         except the last layer.
         """
         self.weights = weights
+        self.biases = biases
         self.activation = np.vectorize(activation)
 
     def predict(self, attributes: np.ndarray) -> np.ndarray:
@@ -23,13 +24,16 @@ class MultilayerPerceptron:
         Predicts the target vector for the given attributes vector.
         """
         data = attributes
-        for i, layer in enumerate(self.weights):
-            data = np.matmul(data, layer)
-            if i < len(self.weights) - 1:
+        for layer, (weights, biases) in \
+                enumerate(zip(self.weights, self.biases)):
+            data = np.matmul(weights, data) + biases
+            if layer < len(self.weights) - 1:
                 data = self.activation(data)
         return data
 
-    def predict_all(self, all_attributes: list[tuple[float]]) -> list[Any]:
+    def predict_all(
+        self, all_attributes: Sequence[np.ndarray]
+    ) -> list[np.ndarray]:
         """
         Returns a list of vectors predicted for each element of the input list.
         """
