@@ -139,3 +139,39 @@ def test_weight_update_more_layers():
         weights, biases, (lambda x: max(x, 0.), lambda x: int(x > 0.))
     )
     perceptron.train(np.array([1., 0., 1.]), np.array([1.]), 1.)
+
+    assert np.allclose(
+        perceptron.weights[2],
+        np.array([-178.5, 0.5])
+    )
+
+    assert np.allclose(
+        perceptron.biases[2],
+        np.array([-18])
+    )
+
+    assert np.allclose(
+        perceptron.weights[1],
+        np.array([
+            [6782., 40699.],
+            [1., -1.]
+        ])
+    )
+
+    assert np.allclose(
+        perceptron.biases[1],
+        np.array([3391., 4.])
+    )
+
+    assert np.allclose(
+        perceptron.weights[0],
+        np.array([
+            [23001154., 2., 23001156.],
+            [138030662.5, 5., 138030664.5]
+        ])
+    )
+
+    assert np.allclose(
+        perceptron.biases[0],
+        np.array([23001151., 138030660.5])
+    )
