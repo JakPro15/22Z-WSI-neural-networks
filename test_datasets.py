@@ -69,7 +69,7 @@ def atest_xor():
 
     perceptron, mses = stochastic_gradient_descent(
         X_train, y_train, X_validation, y_validation,
-        (lambda x: max(x, 0.), lambda x: float(x > 0)), [3, 2, 2], 0.01, SIZE
+        (lambda x: max(x, 0.), lambda x: float(x >= 0)), [3, 2, 2], 0.01, SIZE
     )
     generate_line_plot(range(SIZE), [np.sqrt(mse) for mse in mses],
                        "a", "b", "mses")

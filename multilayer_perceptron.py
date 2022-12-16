@@ -50,6 +50,7 @@ class MultilayerPerceptron:
             ))
             biases.append(np.array([
                 np.random.uniform(-weights_max, weights_max)
+                if i != len(layer_widths) - 2 else 0.
                 for _ in range(output_width)
             ]))
         return cls(weights, biases, activation)
