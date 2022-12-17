@@ -47,7 +47,7 @@ def squares_sum_test():
     BATCH_SIZE = 20
     X_all_original, Y_all_original = generate_dataset(
         lambda X: np.array([(X ** 2).sum()]), 1000, 3,
-        (0, 10)
+        (100, 10)
     )
     normalize_X, normalize_Y, denormalize_Y = get_normalizations(
         X_all_original, Y_all_original, True
@@ -66,7 +66,7 @@ def squares_sum_test():
     )
     print(f"Best achieved MSE: {best_error}")
     generate_line_plot(
-        range(EPOCHS * (len(X_train) // BATCH_SIZE)), mses,
+        range(len(mses)), mses,
         "Mean square errors during training",
         "Batch number", "MSE"
     )

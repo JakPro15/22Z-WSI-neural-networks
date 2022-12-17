@@ -1,6 +1,7 @@
 from typing import Callable, Sequence
 import numpy as np
 from typing_extensions import Self
+from copy import deepcopy
 
 
 class MultilayerPerceptron:
@@ -62,7 +63,7 @@ class MultilayerPerceptron:
         """
         Returns a copy of the perceptron.
         """
-        return type(self)(self.weights.copy(), self.biases.copy(),
+        return type(self)(deepcopy(self.weights), deepcopy(self.biases),
                           (self.activation, self.activation_derivative))
 
     def forward_propagate(

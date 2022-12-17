@@ -17,6 +17,9 @@ def get_normalizations(
     attributes: Sequence[np.ndarray], targets: Sequence[np.ndarray],
     denormalize: bool = False
 ) -> tuple[Callable[[np.ndarray], np.ndarray],
+           Callable[[np.ndarray], np.ndarray]] | \
+     tuple[Callable[[np.ndarray], np.ndarray],
+           Callable[[np.ndarray], np.ndarray],
            Callable[[np.ndarray], np.ndarray]]:
     """
     Returns functions that normalize the attributes and targets from the given
@@ -91,3 +94,11 @@ def prepare_targets(
         for i, element in enumerate(classes)
     }
     return [classes_dict[element] for element in Y], classes
+
+
+def mse(predicted: Sequence[np.ndarray], real: Sequence[np.ndarray]) -> float:
+    """
+    Calculates the mean square error of the given values predicted by the
+    perceptron.
+    """
+    return np.mean(np.square(np.array(real) - predicted))
