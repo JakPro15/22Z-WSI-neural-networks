@@ -1,8 +1,11 @@
 from typing import Callable, Sequence
+
 import numpy as np
-from sgd import stochastic_gradient_descent, mse
 from matplotlib import pyplot as plt
-from training_helpers import ACTIVATIONS, normalize_data, triple_split
+
+from sgd import mse, stochastic_gradient_descent
+from training_helpers import (ACTIVATIONS, get_normalizations,
+                              normalize_sequence, triple_split)
 
 
 def generate_dataset(
@@ -46,11 +49,11 @@ def squares_sum_test():
         lambda X: np.array([(X ** 2).sum()]), 1000, 3,
         (0, 10)
     )
-    X_all, Y_all, normalize, denormalize = normalize_data(
-        X_all_original, Y_all_original
+    normalize_X, normalize_Y, denormalize_Y = get_normalizations(
+        X_all_original, Y_all_original, True
     )
-    assert np.allclose(X_all, [normalize(X) for X in X_all_original])
-    assert np.allclose(Y_all_original, [denormalize(Y) for Y in Y_all])
+    X_all = normalize_sequence(X_all_original, normalize_X)
+    Y_all = normalize_sequence(Y_all_original, normalize_Y)
 
     print(np.mean(X_all, 0))
     print(np.std(X_all, 0))
@@ -70,8 +73,8 @@ def squares_sum_test():
 
     print(f"{mse(best_perceptron.predict_all(X_all), Y_all)=}")
     print(f"{mse(best_perceptron.predict_all(X_test), Y_test)=}")
-    best_perceptron.normalize = normalize
-    best_perceptron.denormalize = denormalize
+    best_perceptron.normalize = normalize_X
+    best_perceptron.denormalize = denormalize_Y
     print(
         f"{mse(best_perceptron.predict_all(X_all_original), Y_all_original)=}"
     )

@@ -13,38 +13,43 @@ ACTIVATIONS = {
 }
 
 
-def normalize_data(
-    attributes: Sequence[np.ndarray], targets: Sequence[np.ndarray]
-) -> tuple[Sequence[np.ndarray], Sequence[np.ndarray],
+def get_normalizations(
+    attributes: Sequence[np.ndarray], targets: Sequence[np.ndarray],
+    denormalize: bool = False
+) -> tuple[Callable[[np.ndarray], np.ndarray],
            Callable[[np.ndarray], np.ndarray]]:
     """
-    Makes the given data have the average of 0 and the standard deviation of 1
-    in each column.
-    Returns the altered dataset and a function to denormalize the results.
+    Returns functions that normalize the attributes and targets from the given
+    dataset.
+    If denormalize is given and True, also returns the target denormalization
+    function.
     """
     attributes_means = np.mean(attributes, 0)
     attributes_deviations = np.std(attributes, 0)
-    attributes -= attributes_means
-    attributes /= attributes_deviations
     target_means = np.mean(targets, 0)
     target_deviations = np.std(targets, 0)
-    targets -= target_means
-    targets /= target_deviations
+    normalizations = (
+        lambda X: (X - attributes_means) / attributes_deviations,
+        lambda Y: (Y - target_means) / target_deviations
+    )
+    if denormalize:
+        return (
+            *normalizations,
+            lambda Y: Y * target_deviations + target_means
+        )
+    else:
+        return normalizations
 
-    def normalize(data: np.ndarray) -> np.ndarray:
-        """
-        Normalizes the given attributes so they can be run through the
-        perceptron.
-        """
-        return (data - attributes_means) / attributes_deviations
 
-    def denormalize(results: np.ndarray) -> np.ndarray:
-        """
-        Denormalizes the given results back to the original scale.
-        """
-        return results * target_deviations + target_means
-
-    return attributes, targets, normalize, denormalize
+def normalize_sequence(
+    sequence: Sequence[np.ndarray],
+    normalize: Callable[[np.ndarray], np.ndarray]
+) -> Sequence[np.ndarray]:
+    """
+    Returns the normalized version of the given sequence using the given
+    normalization function.
+    """
+    return [normalize(element) for element in sequence]
 
 
 def triple_split(
