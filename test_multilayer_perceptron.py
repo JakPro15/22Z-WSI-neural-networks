@@ -84,7 +84,10 @@ def test_weight_update_final_layer():
     perceptron = MultilayerPerceptron(
         weights, biases, (lambda x: x, lambda x: 1.)
     )
-    perceptron.train(np.array([4., 3., 2., 1.]), np.array([1., 1., 1.]), 1.)
+    changes = perceptron.train(
+        np.array([4., 3., 2., 1.]), np.array([1., 1., 1.])
+    )
+    perceptron.apply_changes([changes], 1.)
 
     assert np.array_equal(
         perceptron.weights[0],
@@ -92,7 +95,6 @@ def test_weight_update_final_layer():
                   [0., -1., 2., 0.],
                   [-79., -58., -37., -16.]])
     )
-
     assert np.array_equal(
         perceptron.biases[0], np.array([-8., 0., -19.])
     )
@@ -107,8 +109,10 @@ def test_weight_update_final_layer():
         weights, biases, (lambda x: x, lambda x: 1.)
     )
 
-    perceptron.train(np.array([0.5, 1.5, -0.5, 0.25]),
-                     np.array([1., 1., 1.]), 1.)
+    changes = perceptron.train(
+        np.array([0.5, 1.5, -0.5, 0.25]), np.array([1., 1., 1.])
+    )
+    perceptron.apply_changes([changes], 1.)
 
     assert np.allclose(
         perceptron.weights[0],
@@ -136,42 +140,135 @@ def test_weight_update_more_layers():
         np.array([1.])
     ]
     perceptron = MultilayerPerceptron(
-        weights, biases, (lambda x: max(x, 0.), lambda x: int(x > 0.))
+        weights, biases, (lambda x: max(x, 0.), lambda x: float(x >= 0.))
     )
-    perceptron.train(np.array([1., 0., 1.]), np.array([1.]), 1.)
+    changes = perceptron.train(np.array([1., 0., 1.]), np.array([1.]))
+    perceptron.apply_changes([changes], 1.)
 
     assert np.allclose(
         perceptron.weights[2],
         np.array([-178.5, 0.5])
     )
-
     assert np.allclose(
         perceptron.biases[2],
         np.array([-18])
     )
-
     assert np.allclose(
         perceptron.weights[1],
         np.array([
-            [6782., 40699.],
+            [-77., -455.],
             [1., -1.]
         ])
     )
-
     assert np.allclose(
         perceptron.biases[1],
-        np.array([3391., 4.])
+        np.array([-38.5, 4.])
     )
-
     assert np.allclose(
         perceptron.weights[0],
         np.array([
-            [23001154., 2., 23001156.],
-            [138030662.5, 5., 138030664.5]
+            [39., 2., 41.],
+            [-34., 5., -32.]
         ])
     )
-
     assert np.allclose(
         perceptron.biases[0],
-        np.array([23001151., 138030660.5])
+        np.array([36., -36.])
     )
+
+
+def assert_lists_equal(
+    list1: list[np.ndarray], list2: list[np.ndarray]
+) -> bool:
+    assert len(list1) == len(list2)
+    for element1, element2 in zip(list1, list2):
+        assert np.allclose(element1, element2)
+
+
+def test_get_empty_changes():
+    weights = [
+        np.array([[1., 2., 3.],
+                  [4., 5., 6.]]),
+        np.array([[-1., 1.],
+                  [1., -1.]]),
+        np.array([[2., 0.5]])
+    ]
+    biases = [
+        np.array([-2., 2.]),
+        np.array([-0.5, 4.]),
+        np.array([1.])
+    ]
+    perceptron = MultilayerPerceptron(
+        weights, biases, (lambda x: x, lambda x: 1)
+    )
+    changes = perceptron.get_empty_changes()
+
+    assert_lists_equal(changes[0], [
+        np.array([[0., 0., 0.],
+                  [0., 0., 0.]]),
+        np.array([[0., 0.],
+                  [0., 0.]]),
+        np.array([[0., 0.]])
+    ])
+    assert_lists_equal(changes[1], [
+        np.array([0., 0.]),
+        np.array([0., 0.]),
+        np.array([0.])
+    ])
+
+
+def test_apply_changes():
+    weights = [
+        np.array([[1., 2., 3.],
+                  [4., 5., 6.]]),
+        np.array([[-1., 1.],
+                  [1., -1.]]),
+        np.array([[2., 0.5]])
+    ]
+    biases = [
+        np.array([-2., 2.]),
+        np.array([-0.5, 4.]),
+        np.array([1.])
+    ]
+    perceptron = MultilayerPerceptron(
+        weights, biases, (lambda x: x, lambda x: 1)
+    )
+    changes = [
+        ([np.array([[0.1, 0., 0.],
+                    [0., 1., 0.]]),
+          np.array([[0., 0.11],
+                    [0., 0.]]),
+          np.array([[0., 0.]])],
+         [np.array([0., 0.]),
+          np.array([0., 0.]),
+          np.array([-0.1])]),
+        ([np.array([[0.2, 0., 0.],
+                    [0., 0., 0.]]),
+          np.array([[0., 0.11],
+                    [0., 0.]]),
+          np.array([[0., 0.]])],
+         [np.array([0., 0.]),
+          np.array([0., 0.]),
+          np.array([0.3])]),
+        ([np.array([[0.3, 0., 0.],
+                    [0., -1., 0.]]),
+          np.array([[21., 0.11],
+                    [0., 0.]]),
+          np.array([[0., 0.]])],
+         [np.array([0., 0.]),
+          np.array([0., 0.]),
+          np.array([0.1])]),
+    ]
+    perceptron.apply_changes(changes, 1)
+    assert_lists_equal(perceptron.weights, [
+        np.array([[0.8, 2., 3.],
+                  [4., 5., 6.]]),
+        np.array([[-8., 0.89],
+                  [1., -1.]]),
+        np.array([[2., 0.5]])
+    ])
+    assert_lists_equal(perceptron.biases, [
+        np.array([-2., 2.]),
+        np.array([-0.5, 4.]),
+        np.array([0.9])
+    ])
