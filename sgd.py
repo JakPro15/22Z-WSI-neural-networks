@@ -14,8 +14,8 @@ def mse(predicted: Sequence[np.ndarray], real: Sequence[np.ndarray]) -> float:
 
 
 def stochastic_gradient_descent(
-    X_train: Sequence[np.ndarray], y_train: Sequence[np.ndarray],
-    X_validation: Sequence[np.ndarray], y_validation: Sequence[np.ndarray],
+    X_train: Sequence[np.ndarray], Y_train: Sequence[np.ndarray],
+    X_validation: Sequence[np.ndarray], Y_validation: Sequence[np.ndarray],
     activation: tuple[Callable[[float], float], Callable[[float], float]],
     layer_widths: Sequence[int], learning_rate: float, epochs: int,
     batch_size: int
@@ -26,17 +26,17 @@ def stochastic_gradient_descent(
     activation should be a tuple of 2 functions: the activation function and
     its derivative.
     layer_widths specifies the widths of the hidden layers; input and output
-    layers' widths are set based on the given X and y widths.
+    layers' widths are set based on the given X and Y widths.
     Returns the perceptron and mean square errors on validation set list over
     the trainings.
     """
-    assert len(X_train) == len(y_train)
+    assert len(X_train) == len(Y_train)
     assert len(X_train) > 0
-    assert len(X_validation) == len(y_validation)
+    assert len(X_validation) == len(Y_validation)
     assert len(X_validation) > 0
     assert learning_rate > 0
 
-    all_widths = [len(X_train[0])] + layer_widths + [len(y_train[0])]
+    all_widths = [len(X_train[0])] + layer_widths + [len(Y_train[0])]
     perceptron = MultilayerPerceptron.initialize(all_widths, activation)
     data_point_indexes = list(range(len(X_train)))
     mean_square_errors = []
@@ -51,10 +51,10 @@ def stochastic_gradient_descent(
             for j in range(batch_size):
                 changes.append(perceptron.train(
                     X_train[data_point_indexes[i + j]],
-                    y_train[data_point_indexes[i + j]]
+                    Y_train[data_point_indexes[i + j]]
                 ))
             perceptron.apply_changes(changes, learning_rate)
-            error = mse(perceptron.predict_all(X_validation), y_validation)
+            error = mse(perceptron.predict_all(X_validation), Y_validation)
             mean_square_errors.append(error)
             if error <= best_error:
                 best_error = error

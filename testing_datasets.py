@@ -68,7 +68,7 @@ def normalize_data(
 
 
 def triple_split(
-    X_all: Sequence[np.ndarray], y_all: Sequence[np.ndarray],
+    X_all: Sequence[np.ndarray], Y_all: Sequence[np.ndarray],
     train_size: float, valid_size: float
 ) -> tuple[Sequence[np.ndarray], Sequence[np.ndarray], Sequence[np.ndarray],
            Sequence[np.ndarray], Sequence[np.ndarray], Sequence[np.ndarray]]:
@@ -76,14 +76,14 @@ def triple_split(
     Splits the given dataset into three parts (training, validation and
     testing), with the given proportion.
     """
-    X_train, X_remaining, y_train, y_remaining = train_test_split(
-        X_all, y_all, train_size=train_size
+    X_train, X_remaining, Y_train, Y_remaining = train_test_split(
+        X_all, Y_all, train_size=train_size
     )
-    X_validation, X_test, y_validation, y_test = train_test_split(
-        X_remaining, y_remaining,
+    X_validation, X_test, Y_validation, Y_test = train_test_split(
+        X_remaining, Y_remaining,
         train_size=round(valid_size / (1 - train_size), 3)
     )
-    return X_train, y_train, X_validation, y_validation, X_test, y_test
+    return X_train, Y_train, X_validation, Y_validation, X_test, Y_test
 
 
 def generate_line_plot(
@@ -103,21 +103,24 @@ def generate_line_plot(
 
 
 def squares_sum_test():
-    EPOCHS = 100
+    EPOCHS = 50
     BATCH_SIZE = 20
-    X_all_original, y_all_original = generate_dataset(
+    X_all_original, Y_all_original = generate_dataset(
         lambda X: np.array([(X ** 2).sum()]), 1000, 3,
         (0, 10)
     )
-    X_all, y_all, normalize, denormalize = normalize_data(X_all_original, y_all_original)
+    X_all, Y_all, normalize, denormalize = normalize_data(X_all_original, Y_all_original)
+    assert np.allclose(X_all, [normalize(X) for X in X_all_original])
+    assert np.allclose(Y_all_original, [denormalize(Y) for Y in Y_all])
+
     print(np.mean(X_all, 0))
     print(np.std(X_all, 0))
-    X_train, y_train, X_validation, y_validation, X_test, y_test = \
-        triple_split(X_all, y_all, 0.8, 0.1)
+    X_train, Y_train, X_validation, Y_validation, X_test, Y_test = \
+        triple_split(X_all, Y_all, 0.8, 0.1)
 
     best_perceptron, best_error, mses = stochastic_gradient_descent(
-        X_train, y_train, X_validation, y_validation,
-        ACTIVATIONS["logistic"], [3, 3], 1, EPOCHS, BATCH_SIZE
+        X_train, Y_train, X_validation, Y_validation,
+        ACTIVATIONS["relu"], [3, 3], 0.1, EPOCHS, BATCH_SIZE
     )
     print(f"Best achieved MSE: {best_error}")
     generate_line_plot(
@@ -126,13 +129,23 @@ def squares_sum_test():
         "Batch number", "MSE"
     )
 
-    assert np.allclose(X_all, [normalize(X) for X in X_all_original])
-    assert np.allclose(y_all_original, [denormalize(y) for y in y_all])
-    print(f"{mse(best_perceptron.predict_all(X_all), y_all)=}")
-    print(f"{mse(best_perceptron.predict_all(X_test), y_test)=}")
+    print(f"{mse(best_perceptron.predict_all(X_all), Y_all)=}")
+    print(f"{mse(best_perceptron.predict_all(X_test), Y_test)=}")
     best_perceptron.normalize = normalize
     best_perceptron.denormalize = denormalize
-    print(f"{mse(best_perceptron.predict_all(X_all_original), y_all_original)=}")
+    print(f"{mse(best_perceptron.predict_all(X_all_original), Y_all_original)=}")
+
+
+def change_data_into_prob(Y: Sequence[np.ndarray]) -> Sequence[np.ndarray]:
+    classes = set(Y)
+    classes_dict = {
+        element: np.array([
+            0. if j != i else 1.
+            for j in range(len(classes))
+        ])
+        for i, element in enumerate(classes)
+    }
+    return [classes_dict[element] for element in Y]
 
 
 if __name__ == "__main__":
