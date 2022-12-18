@@ -1,8 +1,8 @@
-from typing import Callable, Sequence
+from typing import Callable
 
 import numpy as np
-from matplotlib import pyplot as plt
 
+from plots import generate_line_plot
 from sgd import mse, stochastic_gradient_descent
 from training_helpers import (ACTIVATIONS, get_normalizations,
                               normalize_sequence, triple_split)
@@ -24,22 +24,6 @@ def generate_dataset(
     targets = [function(X)  # * np.random.normal(1, 0.025)
                for X in attributes]
     return attributes, targets
-
-
-def generate_line_plot(
-    args: Sequence[float], values: Sequence[float], title: str,
-    xlabel: str, ylabel: str,
-) -> None:
-    """
-    Generates a 2-dimensional matplotlib graph for the given data.
-    args and values lists should have the same length.
-    """
-    plt.figure()
-    plt.plot(args, values, '-', markersize=3)
-    plt.xlabel(xlabel)
-    plt.ylabel(ylabel)
-    plt.title(title)
-    plt.show()
 
 
 def squares_sum_test():

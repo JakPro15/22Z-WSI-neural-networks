@@ -1,5 +1,6 @@
-from multilayer_perceptron import MultilayerPerceptron
 import numpy as np
+
+from multilayer_perceptron import MultilayerPerceptron
 
 
 def test_prediction_1_layer():

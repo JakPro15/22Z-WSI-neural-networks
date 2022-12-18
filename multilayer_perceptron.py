@@ -1,7 +1,8 @@
+from copy import deepcopy
 from typing import Callable, Sequence
+
 import numpy as np
 from typing_extensions import Self
-from copy import deepcopy
 
 
 class MultilayerPerceptron:

@@ -1,7 +1,7 @@
-from typing import Sequence, Callable, TypeVar, Hashable
+from typing import Callable, Hashable, Sequence, TypeVar
+
 import numpy as np
 from sklearn.model_selection import train_test_split
-
 
 ACTIVATIONS = {
     "relu": (lambda x: max(x, 0.),
