@@ -35,3 +35,12 @@ def generate_line_plot(
     plt.ylabel(ylabel)
     plt.title(title)
     plt.show()
+
+
+def generate_confusion(confusion_matrix: Sequence[Sequence[float]]):
+    ax = plt.subplot()
+    sns.heatmap(confusion_matrix, annot=True, fmt='g', ax=ax)
+    ax.set_xlabel('Przewidziane wartości')
+    ax.set_ylabel('Prawdziwe wartości')
+    ax.set_title('Macierz pomyłek')
+    plt.show()
