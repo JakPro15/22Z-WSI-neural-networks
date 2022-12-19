@@ -1,7 +1,8 @@
 import numpy as np
 from pytest import approx
 
-from training_helpers import (get_normalizations, mse, normalize_sequence,
+from training_helpers import (get_accuracy, get_confusion_matrix,
+                              get_normalizations, mse, normalize_sequence,
                               prepare_targets)
 
 
@@ -12,8 +13,7 @@ def test_get_normalizations():
     targets = [np.array([3, 2, 1]),
                np.array([-3, -2, -1]),
                np.array([0, 2, 0])]
-    normalize_X, normalize_Y, denormalize_Y = \
-        get_normalizations(data, targets, True)
+    normalize_X, normalize_Y, denormalize_Y = get_normalizations(data, targets)
     assert np.allclose(
         normalize_X(np.array([0, 0, 0])),
         [-2 / np.sqrt(2 / 3), -(1 / 3) / np.sqrt(86 / 9), 1 / np.sqrt(8)]
@@ -57,17 +57,11 @@ def test_normalize_sequence():
 
 
 def test_prepare_targets():
-    targets = ['a', 'a', 'b', 'c', 'b']
-    prepared, classes = prepare_targets(targets)
-    assert set(classes) == {'a', 'b', 'c'}
+    classes = ['a', 'b', 'c']
+    targets = ['a', 'b', 'a', 'c']
+    prepared = prepare_targets(targets, classes)
     assert np.array_equal(
-        [
-            np.array([
-                1. if class_ == val else 0.
-                for class_ in classes
-            ])
-            for val in targets
-        ], prepared
+        [[1, 0, 0], [0, 1, 0], [1, 0, 0], [0, 0, 1]], prepared
     )
 
 
@@ -86,3 +80,38 @@ def test_mse():
     assert mse(predicted[1], real[1]) == approx(0.0125)
     assert mse(predicted[2], real[2]) == approx(0.08625)
     assert mse(predicted, real) == approx(0.1279, abs=0.0001)
+
+
+def test_get_confusion_matrix():
+    real = [2, 1, 1, 0, 0, 1, 2, 2]
+    predicted = [2, 1, 0, 1, 0, 1, 1, 2]
+    matrix = get_confusion_matrix(real, predicted)
+    assert matrix == [
+        [1, 1, 0],
+        [1, 2, 0],
+        [0, 1, 2]
+    ]
+    real = [0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2]
+    predicted = [2, 0, 1, 0, 1, 1, 2, 1, 2, 0, 2, 2]
+    matrix = get_confusion_matrix(real, predicted)
+    assert matrix == [
+        [2, 1, 1],
+        [0, 3, 1],
+        [1, 0, 3]
+    ]
+
+
+def test_get_accuracy():
+    matrix = [
+        [2, 1, 1],
+        [0, 3, 1],
+        [1, 0, 3]
+    ]
+    assert get_accuracy(matrix) == approx(2 / 3)
+
+    matrix = [
+        [2, 0, 0],
+        [0, 3, 0],
+        [0, 0, 5]
+    ]
+    assert get_accuracy(matrix) == approx(1.)

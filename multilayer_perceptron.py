@@ -8,7 +8,9 @@ from typing_extensions import Self
 class MultilayerPerceptron:
     def __init__(
         self, weights: Sequence[np.ndarray], biases: Sequence[np.ndarray],
-        activation: tuple[Callable[[float], float], Callable[[float], float]]
+        activation: tuple[Callable[[float], float], Callable[[float], float]],
+        normalize: Callable[[np.ndarray], np.ndarray] = None,
+        denormalize: Callable[[np.ndarray], np.ndarray] = None
     ) -> None:
         """
         Creates a multilayer perceprtion with the given weights and the
@@ -18,18 +20,22 @@ class MultilayerPerceptron:
         activation is the activation function applied on all neuron outputs
         except the last layer, given as a tuple of the function itself and its
         derivative.
+        normalize and denormalize can be set after the training in order to
+        make the perceptron work on original data before normalization.
         """
         self.weights = weights
         self.biases = biases
         self.activation = np.vectorize(activation[0])
         self.activation_derivative = np.vectorize(activation[1])
-        self.normalize = None
-        self.denormalize = None
+        self.normalize = normalize
+        self.denormalize = denormalize
 
     @classmethod
     def initialize(
         cls, layer_widths: Sequence[int],
-        activation: tuple[Callable[[float], float], Callable[[float], float]]
+        activation: tuple[Callable[[float], float], Callable[[float], float]],
+        normalize: Callable[[np.ndarray], np.ndarray] = None,
+        denormalize: Callable[[np.ndarray], np.ndarray] = None
     ) -> Self:
         """
         Creates a multilayer perceptron with the given dimensions and
@@ -58,14 +64,15 @@ class MultilayerPerceptron:
                 if i != len(layer_widths) - 2 else 0.
                 for _ in range(output_width)
             ]))
-        return cls(weights, biases, activation)
+        return cls(weights, biases, activation, normalize, denormalize)
 
     def copy(self) -> Self:
         """
         Returns a copy of the perceptron.
         """
         return type(self)(deepcopy(self.weights), deepcopy(self.biases),
-                          (self.activation, self.activation_derivative))
+                          (self.activation, self.activation_derivative),
+                          self.normalize, self.denormalize)
 
     def forward_propagate(
         self, attributes: np.ndarray
@@ -137,6 +144,7 @@ class MultilayerPerceptron:
         Trains the perceptron based on the given piece of data.
         Calculates changes in weights and biases via backpropagation and
         returns them.
+        The given piece of data should already be normalized.
         """
         sums, inputs, outputs = self.forward_propagate(attributes)
         weights_changes, biases_changes = \

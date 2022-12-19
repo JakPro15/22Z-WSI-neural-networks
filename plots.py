@@ -1,4 +1,5 @@
 from typing import Any, Sequence
+import numpy as np
 
 import seaborn as sns
 from matplotlib import pyplot as plt
@@ -10,7 +11,9 @@ def generate_log_strip_plot(
 ) -> None:
     """
     Generates a seaborn strip plot based on the given data.
+    The y axis is in a logarithmic scale.
     """
+    data = [np.log10(column) for column in data]
     sns.stripplot(data, size=3)
     plt.title(title)
     plt.xlabel(xlabel)
@@ -37,10 +40,11 @@ def generate_line_plot(
     plt.show()
 
 
-def generate_confusion(confusion_matrix: Sequence[Sequence[float]]):
-    ax = plt.subplot()
-    sns.heatmap(confusion_matrix, annot=True, fmt='g', ax=ax)
-    ax.set_xlabel('Przewidziane wartości')
-    ax.set_ylabel('Prawdziwe wartości')
-    ax.set_title('Macierz pomyłek')
+def show_confusion_matrix(confusion_matrix: Sequence[Sequence[float]]):
+    """
+    Shows a seaborn heatmap based on the given confusion matrix.
+    """
+    sns.heatmap(confusion_matrix, annot=True, fmt='')
+    plt.xlabel('Przewidziana wartość')
+    plt.ylabel('Prawdziwa wartość')
     plt.show()

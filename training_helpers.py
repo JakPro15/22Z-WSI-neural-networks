@@ -1,7 +1,9 @@
+from collections import Counter
 from typing import Callable, Hashable, Sequence, TypeVar
 
 import numpy as np
 from sklearn.model_selection import train_test_split
+
 
 ACTIVATIONS = {
     "relu": (lambda x: max(x, 0.),
@@ -14,34 +16,26 @@ ACTIVATIONS = {
 
 
 def get_normalizations(
-    attributes: Sequence[np.ndarray], targets: Sequence[np.ndarray],
-    denormalize: bool = False
+    attributes: Sequence[np.ndarray], targets: Sequence[np.ndarray]
 ) -> tuple[Callable[[np.ndarray], np.ndarray],
-           Callable[[np.ndarray], np.ndarray]] | \
-     tuple[Callable[[np.ndarray], np.ndarray],
            Callable[[np.ndarray], np.ndarray],
            Callable[[np.ndarray], np.ndarray]]:
     """
-    Returns functions that normalize the attributes and targets from the given
-    dataset.
-    If denormalize is given and True, also returns the target denormalization
-    function.
+    Returns three functions:
+        one normalizing the attributes of a point of data
+        one normalizing the targets of a point of data
+        one denormalizing the targets of a point of data
+    calculated for the given dataset.
     """
     attributes_means = np.mean(attributes, 0)
     attributes_deviations = np.std(attributes, 0)
     target_means = np.mean(targets, 0)
     target_deviations = np.std(targets, 0)
-    normalizations = (
+    return (
         lambda X: (X - attributes_means) / attributes_deviations,
-        lambda Y: (Y - target_means) / target_deviations
+        lambda Y: (Y - target_means) / target_deviations,
+        lambda Y: Y * target_deviations + target_means
     )
-    if denormalize:
-        return (
-            *normalizations,
-            lambda Y: Y * target_deviations + target_means
-        )
-    else:
-        return normalizations
 
 
 def normalize_sequence(
@@ -78,14 +72,13 @@ ClassType = TypeVar("ClassType", bound=Hashable)
 
 
 def prepare_targets(
-    Y: Sequence[ClassType]
-) -> tuple[Sequence[np.ndarray], list[ClassType]]:
+    Y: Sequence[ClassType], classes: list[ClassType]
+) -> Sequence[np.ndarray]:
     """
     Converts a list of classification targets (classes) into a list of arrays
     ready to be used for training of a perceptron.
-    Also returns a list of original classes.
+    classes is the list of possible classes.
     """
-    classes = list(set(Y))
     classes_dict = {
         element: np.array([
             0. if j != i else 1.
@@ -93,7 +86,7 @@ def prepare_targets(
         ])
         for i, element in enumerate(classes)
     }
-    return [classes_dict[element] for element in Y], classes
+    return [classes_dict[element] for element in Y]
 
 
 def mse(predicted: Sequence[np.ndarray], real: Sequence[np.ndarray]) -> float:
@@ -102,3 +95,24 @@ def mse(predicted: Sequence[np.ndarray], real: Sequence[np.ndarray]) -> float:
     perceptron.
     """
     return np.mean(np.square(np.array(real) - predicted))
+
+
+def get_confusion_matrix(
+    targets: Sequence[int], predictions: Sequence[int]
+) -> list[list[int]]:
+    """
+    Returns a 3x3 confusion matrix for the given real and predicted targets,
+    where possible target values (classes) are 0, 1 or 2.
+    """
+    frequencies = Counter(zip(targets, predictions))
+    return [[frequencies[(0, 0)], frequencies[(0, 1)], frequencies[(0, 2)]],
+            [frequencies[(1, 0)], frequencies[(1, 1)], frequencies[(1, 2)]],
+            [frequencies[(2, 0)], frequencies[(2, 1)], frequencies[(2, 2)]]]
+
+
+def get_accuracy(confusion_matrix: Sequence[Sequence[int]]) -> float:
+    """
+    Returns accuracy metric calculated from the given 3x3 confusion matrix.
+    """
+    return (confusion_matrix[0][0] + confusion_matrix[1][1] +
+            confusion_matrix[2][2]) / np.sum(confusion_matrix)

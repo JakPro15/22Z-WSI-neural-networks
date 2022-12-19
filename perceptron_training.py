@@ -71,22 +71,26 @@ def stochastic_gradient_descent(
     activation: tuple[Callable[[float], float], Callable[[float], float]],
     layer_widths: Sequence[int], learning_rate: float, epochs: int,
     batch_size: int
-) -> tuple[MultilayerPerceptron, list[float]]:
+) -> tuple[MultilayerPerceptron, float, list[float]]:
     """
     Trains a multilayer perceptron using the given training and validation
     datasets and stochastic gradient descent.
+    The given training and validation sets should be normalized.
     activation should be a tuple of 2 functions: the activation function and
     its derivative.
     layer_widths specifies the widths of the hidden layers; input and output
     layers' widths are set based on the given X and Y widths.
     Returns the perceptron and mean square errors on validation set list over
     the trainings.
+    Batch size equal to the length of the training set makes the algorithm
+    equivalent to simple gradient descent.
     """
     assert len(X_train) == len(Y_train)
     assert len(X_train) > 0
     assert len(X_validation) == len(Y_validation)
     assert len(X_validation) > 0
     assert learning_rate > 0
+    assert 0 <= batch_size <= len(X_train)
 
     all_widths = [len(X_train[0])] + layer_widths + [len(Y_train[0])]
     perceptron = MultilayerPerceptron.initialize(all_widths, activation)
