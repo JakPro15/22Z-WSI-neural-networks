@@ -21,7 +21,7 @@ def generate_dataset(
     for _ in range(points_amount):
         value = np.random.normal(*parameters, input_size)
         attributes.append(value)
-    targets = [function(X)  # * np.random.normal(1, 0.025)
+    targets = [function(X) * np.random.normal(1, 0.025)
                for X in attributes]
     return attributes, targets
 
@@ -139,5 +139,5 @@ def xor_test() -> None:
 
 
 if __name__ == "__main__":
-    squares_sum_test()
-    # xor_test()
+    # squares_sum_test()
+    xor_test()
