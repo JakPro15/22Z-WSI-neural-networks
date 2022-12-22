@@ -4,7 +4,6 @@ from typing import Callable, Hashable, Sequence, TypeVar
 import numpy as np
 from sklearn.model_selection import train_test_split
 
-
 ACTIVATIONS = {
     "relu": (lambda x: max(x, 0.),
              lambda x: float(x >= 0)),
@@ -26,6 +25,8 @@ def get_normalizations(
         one normalizing the targets of a point of data
         one denormalizing the targets of a point of data
     calculated for the given dataset.
+    Normalization is making the data have the average of 0 and standard
+    deviation of 1 by subtraction and division by a positive value.
     """
     attributes_means = np.mean(attributes, 0)
     attributes_deviations = np.std(attributes, 0)
@@ -72,11 +73,11 @@ ClassType = TypeVar("ClassType", bound=Hashable)
 
 
 def prepare_targets(
-    Y: Sequence[ClassType], classes: list[ClassType]
+    targets: Sequence[ClassType], classes: list[ClassType]
 ) -> Sequence[np.ndarray]:
     """
-    Converts a list of classification targets (classes) into a list of arrays
-    ready to be used for training of a perceptron.
+    Converts a list of classification targets (classes) into a list of numpy
+    arrays ready to be used for training of a perceptron.
     classes is the list of possible classes.
     """
     classes_dict = {
@@ -86,7 +87,7 @@ def prepare_targets(
         ])
         for i, element in enumerate(classes)
     }
-    return [classes_dict[element] for element in Y]
+    return [classes_dict[element] for element in targets]
 
 
 def mse(predicted: Sequence[np.ndarray], real: Sequence[np.ndarray]) -> float:

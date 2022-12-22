@@ -1,5 +1,5 @@
 from copy import deepcopy
-from typing import Callable, Sequence
+from typing import Any, Callable, Sequence
 
 import numpy as np
 from typing_extensions import Self
@@ -10,10 +10,10 @@ class MultilayerPerceptron:
         self, weights: Sequence[np.ndarray], biases: Sequence[np.ndarray],
         activation: tuple[Callable[[float], float], Callable[[float], float]],
         normalize: Callable[[np.ndarray], np.ndarray] = None,
-        denormalize: Callable[[np.ndarray], np.ndarray] = None
+        denormalize: Callable[[np.ndarray], Any] = None
     ) -> None:
         """
-        Creates a multilayer perceprtion with the given weights and the
+        Creates a multilayer perceptron with the given weights and the given
         activation function.
         Each element of weights should be a matrix - a list of lists of
         weights for each neuron in the layer, given as a numpy ndarray.
@@ -21,10 +21,11 @@ class MultilayerPerceptron:
         except the last layer, given as a tuple of the function itself and its
         derivative.
         normalize and denormalize can be set after the training in order to
-        make the perceptron work on original data before normalization.
+        make the perceptron work on original (not normalized) data.
         """
         self.weights = weights
         self.biases = biases
+        self.scalar_activation = activation
         self.activation = np.vectorize(activation[0])
         self.activation_derivative = np.vectorize(activation[1])
         self.normalize = normalize
@@ -53,14 +54,13 @@ class MultilayerPerceptron:
             weights.append(np.array([
                 [
                     np.random.uniform(-weights_max, weights_max)
-                    # output layer gets weights of 0
+                    # output layer gets weights and biases of 0
                     if i != len(layer_widths) - 2 else 0.
                     for _ in range(input_width)
                 ] for _ in range(output_width)
             ]))
             biases.append(np.array([
                 np.random.uniform(-weights_max, weights_max)
-                # output layer gets biases of 0
                 if i != len(layer_widths) - 2 else 0.
                 for _ in range(output_width)
             ]))
@@ -71,8 +71,8 @@ class MultilayerPerceptron:
         Returns a copy of the perceptron.
         """
         return type(self)(deepcopy(self.weights), deepcopy(self.biases),
-                          (self.activation, self.activation_derivative),
-                          self.normalize, self.denormalize)
+                          self.scalar_activation, self.normalize,
+                          self.denormalize)
 
     def forward_propagate(
         self, attributes: np.ndarray
@@ -94,10 +94,10 @@ class MultilayerPerceptron:
                 data = self.activation(data)
         return sums, inputs, data
 
-    def get_empty_changes(self) -> tuple[np.ndarray, np.ndarray]:
+    def get_empty_changes(self) -> tuple[list[np.ndarray], list[np.ndarray]]:
         """
         Returns empty copies of the weights and biases of the perceptron,
-        to which changes can be saved by basck_propagate.
+        to which changes can be saved by back_propagate.
         """
         weights_changes = []
         biases_changes = []
@@ -111,12 +111,13 @@ class MultilayerPerceptron:
     def back_propagate(
         self, sums: list[np.ndarray], inputs: list[np.ndarray],
         errors: np.ndarray
-    ) -> None:
+    ) -> tuple[np.ndarray, np.ndarray]:
         """
         Based on values calculated in the forward propagation, executes
-        backpropagation. Returns the changes in weights and biases calculated.
+        backpropagation. Returns the gradients of weights and biases
+        calculated.
         """
-        weights_changes, biases_changes = self.get_empty_changes()
+        weights_gradient, biases_gradient = self.get_empty_changes()
         deltas = []
         for layer_index in reversed(range(len(self.weights))):
             prev_deltas = deltas
@@ -132,10 +133,10 @@ class MultilayerPerceptron:
                         sums[layer_index][neuron_index]
                     )
                 deltas.append(delta)
-                biases_changes[layer_index][neuron_index] = delta
-                weights_changes[layer_index][neuron_index] = \
+                biases_gradient[layer_index][neuron_index] = delta
+                weights_gradient[layer_index][neuron_index] = \
                     inputs[layer_index] * delta
-        return weights_changes, biases_changes
+        return weights_gradient, biases_gradient
 
     def train(
         self, attributes: np.ndarray, targets: np.ndarray
@@ -147,37 +148,29 @@ class MultilayerPerceptron:
         The given piece of data should already be normalized.
         """
         sums, inputs, outputs = self.forward_propagate(attributes)
-        weights_changes, biases_changes = \
-            self.back_propagate(sums, inputs, outputs - targets)
-        return weights_changes, biases_changes
+        return self.back_propagate(sums, inputs, outputs - targets)
 
     def apply_changes(
-        self, changes: list[tuple[np.ndarray, np.ndarray]],
+        self, gradients: list[tuple[np.ndarray, np.ndarray]],
         learning_rate: float
     ) -> None:
         """
-        Applies the average of the given changes to the weights and biases of
-        the perceptron.
+        Applies the changes based on the average of the given gradients to the
+        weights and biases of the perceptron.
         """
-        if len(changes) > 1:
-            total_weights_changes, total_biases_changes = \
-                self.get_empty_changes()
-            all_weights_changes, all_biases_changes = zip(*changes)
-            for weights_changes, biases_changes in \
-                    zip(all_weights_changes, all_biases_changes):
-                for i in range(len(weights_changes)):
-                    total_weights_changes[i] += weights_changes[i]
-                    total_biases_changes[i] += biases_changes[i]
-        else:
-            total_weights_changes = changes[0][0]
-            total_biases_changes = changes[0][1]
+        total_weights_gradients, total_biases_gradients = \
+            self.get_empty_changes()
+        for weights_changes, biases_changes in gradients:
+            for i in range(len(weights_changes)):
+                total_weights_gradients[i] += weights_changes[i]
+                total_biases_gradients[i] += biases_changes[i]
         for i in range(len(self.weights)):
             self.weights[i] -= \
-                learning_rate * total_weights_changes[i] / len(changes)
+                learning_rate * total_weights_gradients[i] / len(gradients)
             self.biases[i] -= \
-                learning_rate * total_biases_changes[i] / len(changes)
+                learning_rate * total_biases_gradients[i] / len(gradients)
 
-    def predict(self, attributes: np.ndarray) -> np.ndarray:
+    def predict(self, attributes: np.ndarray) -> Any:
         """
         Predicts the target vector for the given attributes vector.
         """
@@ -197,7 +190,7 @@ class MultilayerPerceptron:
 
     def predict_all(
         self, all_attributes: Sequence[np.ndarray]
-    ) -> list[np.ndarray]:
+    ) -> list[Any]:
         """
         Returns a list of vectors predicted for each element of the input list.
         """

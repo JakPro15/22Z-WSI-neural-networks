@@ -20,8 +20,7 @@ def _do_batch(
 ) -> float:
     """
     Executes a single batch for stochastic gradient descent, updating the
-    perceptron. Returns the MSE on the validation set after the batch.
-    Raises OverflowError if the error turns out to be NaN.
+    perceptron. Returns MSE on the validation set after the batch.
     """
     changes = []
     for element_index in range(batch_size):
@@ -43,9 +42,9 @@ def _do_epoch(
 ) -> tuple[float, MultilayerPerceptron, bool]:
     """
     Executes a single epoch for stochastic gradient descent.
-    Raises OverflowError if values get too large to handle.
     Returns the new best error and perceptron.
-    Third return indicates if the SGD function should end (NaN encountered).
+    Third return indicates if the SGD function should end
+    (NaN encountered - values got too large).
     """
     data_point_indexes = list(range(len(X_train)))
     shuffle(data_point_indexes)
@@ -74,7 +73,7 @@ def stochastic_gradient_descent(
 ) -> tuple[MultilayerPerceptron, float, list[float]]:
     """
     Trains a multilayer perceptron using the given training and validation
-    datasets and stochastic gradient descent.
+    datasets and stochastic gradient descent with batches of the given size.
     The given training and validation sets should be normalized.
     activation should be a tuple of 2 functions: the activation function and
     its derivative.

@@ -273,3 +273,27 @@ def test_apply_changes():
         np.array([-0.5, 4.]),
         np.array([0.9])
     ])
+
+    changes = [
+        ([np.array([[10., 0., 0.],
+                    [0., 0., 0.]]),
+          np.array([[0., 11.],
+                    [0., 0.]]),
+          np.array([[0., 0.]])],
+         [np.array([0., 0.]),
+          np.array([0., -20.]),
+          np.array([0.])])
+    ]
+    perceptron.apply_changes(changes, 0.1)
+    assert_lists_equal(perceptron.weights, [
+        np.array([[-0.2, 2., 3.],
+                  [4., 5., 6.]]),
+        np.array([[-8., -0.21],
+                  [1., -1.]]),
+        np.array([[2., 0.5]])
+    ])
+    assert_lists_equal(perceptron.biases, [
+        np.array([-2., 2.]),
+        np.array([-0.5, 6.]),
+        np.array([0.9])
+    ])

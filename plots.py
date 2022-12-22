@@ -1,6 +1,6 @@
 from typing import Any, Sequence
-import numpy as np
 
+import numpy as np
 import seaborn as sns
 from matplotlib import pyplot as plt
 
